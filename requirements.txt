@@ -1,0 +1,7 @@
+pandas
+ipykernel
+jupyter
+matplotlib
+langdetect
+gensim
+spacy
