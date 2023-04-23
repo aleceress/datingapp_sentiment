@@ -16,14 +16,33 @@ def get_sentiwn_score(word):
         score = abs(avg_polarity['pos'] + avg_polarity['obj']) - (avg_polarity['neg'] + avg_polarity['obj'])
     return score
 
-def get_aspect_polarity(aspect_adjs):
-    if os.path.exists("data/aspect_polarity.pickle"):
-        return pd.read_pickle("data/aspect_polarity.pickle")
+def get_aspects_polarity(aspects_adjs):
+    if os.path.exists("data/aspects_polarity.pickle"):
+        return pd.read_pickle("data/aspects_polarity.pickle")
 
-    aspect_polarity = pd.Series()
-    for aspect in tqdm(aspect_adjs.keys(), total=len(aspect_adjs)):
-        aspect_polarity[aspect] = sum([get_sentiwn_score(adj) for adj in aspect_adjs[aspect]])
+    aspects_polarity = pd.Series()
+    for aspect in tqdm(aspects_adjs.keys(), total=len(aspects_adjs)):
+        aspects_polarity[aspect] = sum([get_sentiwn_score(adj) for adj in aspects_adjs[aspect]])
 
-    norm_aspect_polarity = general.normalize_series(aspect_polarity)
-    norm_aspect_polarity.to_pickle("data/aspect_polarity.pickle")
-    return norm_aspect_polarity.sort_values(ascending=False)
+    norm_aspects_polarity = general.normalize_series(aspects_polarity)
+    norm_aspects_polarity.to_pickle("data/aspects_polarity.pickle")
+    return norm_aspects_polarity.sort_values(ascending=False)
+
+def get_aspects_polarity_percentage(aspects, aspect_adjs, verbose = True):
+    count = 0
+    count_positive = 0
+    count_negative = 0
+
+    for aspect in aspects:
+        for adj in aspect_adjs[aspect]:
+            score = get_sentiwn_score(adj)
+            if abs(score) > 0.40:
+                if verbose: 
+                    print(adj, score)
+                count = count+1
+                if score < 0:
+                    count_negative = count_negative+1
+                else:
+                    count_positive = count_positive+1
+
+    return count_positive/count*100, count_negative/count*100
