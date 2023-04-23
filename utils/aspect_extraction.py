@@ -78,13 +78,13 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
               
 
 def get_aspects_adjs_and_freq():
-    if os.path.exists("data/aspect_adjs.pickle") and os.path.exists("data/aspect_freq.pickle"):
-        with open("data/aspect_adjs.pickle", "rb") as f:
-            aspect_adjs = pickle.load(f)
-        return aspect_adjs, pd.read_pickle("data/aspect_freq.pickle")
+    if os.path.exists("data/aspects_adjs.pickle") and os.path.exists("data/aspects_freq.pickle"):
+        with open("data/aspects_adjs.pickle", "rb") as f:
+            aspects_adjs = pickle.load(f)
+        return aspects_adjs, pd.read_pickle("data/aspects_freq.pickle")
     
-    aspect_adjs = {}
-    aspect_freq = pd.Series()
+    aspects_adjs = {}
+    aspects_freq = pd.Series()
 
     for i in range(10):
         print(f"processing {i+1}/10 reviews")
@@ -92,13 +92,13 @@ def get_aspects_adjs_and_freq():
         tinder_reviews = pd.read_pickle(f"data/tinder_spacy/spacy_tinder_sample_{i}.pickle").dropna()
         for _, review in tqdm(tinder_reviews["content"].items(), total=len(tinder_reviews)):
             for _, sentence in enumerate(split_sentences(review)):
-                add_adj_aspects(aspect_adjs, aspect_freq, sentence)
-                add_verb_aspects(aspect_adjs, aspect_freq, sentence)
+                add_adj_aspects(aspects_adjs, aspects_freq, sentence)
+                add_verb_aspects(aspects_adjs, aspects_freq, sentence)
     
-    norm_aspect_freq = general.normalize_series(aspect_freq)
-    norm_aspect_freq.to_pickle("data/aspect_freq.pickle")
+    norm_aspects_freq = general.normalize_series(aspects_freq)
+    norm_aspects_freq.to_pickle("data/aspects_freq.pickle")
 
-    with open("data/aspect_adjs.pickle", "wb+") as f:
-        pickle.dump(aspect_adjs, f)
+    with open("data/aspects_adjs.pickle", "wb+") as f:
+        pickle.dump(aspects_adjs, f)
         
-    return aspect_adjs, norm_aspect_freq
+    return aspects_adjs, norm_aspects_freq
