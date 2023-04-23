@@ -34,17 +34,24 @@ def get_aspects_embeddings(aspects):
     return aspects_embedding
 
 
-def get_query_similarities(aspects, query, not_query=None):
+def get_query_expansion(query, not_query= []):
+    load_wv2()
+    return [w for w in query] + [i[0].lower().replace("_", " ") for i in w2v.most_similar(positive = [q for q in query], negative = [nq for nq in not_query])]
+
+def get_query_similarities(aspects, query, not_query=[]):
     load_wv2()
     query_embedding = np.zeros(w2v.vector_size)
-    for word in query.split(" "):
-        query_embedding += get_w2v_embedding(word)
+    query_expansion = get_query_expansion(query, not_query)
+    print(f"expansion: {query_expansion}")
+    for q in query_expansion:
+        for w in q.split(" "):
+            try:
+                query_embedding += get_w2v_embedding(w)
+            except KeyError:
+                continue
 
-    if not_query:
-        for word in not_query.split(" "):
-            query_embedding -= get_w2v_embedding(word)
+    query_embedding = query_embedding/len(query_expansion)
 
-    query_embedding = query_embedding/len(query.split(" "))
     similarity = pd.Series()
     for w, e in aspects.items():
         similarity[w] = cosine_similarity(e.reshape(1,-1), query_embedding.reshape(1,-1))[0][0]
