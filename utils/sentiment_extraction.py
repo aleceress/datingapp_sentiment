@@ -22,7 +22,7 @@ def get_aspects_polarity(aspects_adjs):
 
     aspects_polarity = pd.Series()
     for aspect in tqdm(aspects_adjs.keys(), total=len(aspects_adjs)):
-        aspects_polarity[aspect] = sum([get_sentiwn_score(adj) for adj in aspects_adjs[aspect]])
+        aspects_polarity[aspect] = sum([get_sentiwn_score(adj) for adj in set(aspects_adjs[aspect])])
 
     norm_aspects_polarity = general.normalize_series(aspects_polarity)
     norm_aspects_polarity.to_pickle("data/aspects_polarity.pickle")

@@ -47,10 +47,10 @@ def add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=None):
         for token, level, _ in subtree:
             if token.pos_ == 'ADJ' and len([(n, l) for n, l in subnouns if l < level]) == 0:
                 try:
-                    nouns_map[noun.text.lower()].add(token.text.lower())
+                    nouns_map[noun.text.lower()].append(token.text.lower())
                     nouns_freq[noun.text.lower()]+=1
                 except KeyError:
-                    nouns_map[noun.text.lower()] = {token.text.lower()}
+                    nouns_map[noun.text.lower()] = [token.text.lower()]
                     nouns_freq[noun.text.lower()] = 1
 
 def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
@@ -68,10 +68,10 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
                 if not left:
                     if candidate.pos_ == 'ADJ' and candidate.text.isalpha() and level == 0:
                         try:
-                            nouns_map[subject.text.lower()].add(candidate.text.lower())
+                            nouns_map[subject.text.lower()].append(candidate.text.lower())
                             nouns_freq[subject.text.lower()]+=1
                         except KeyError:
-                            nouns_map[subject.text.lower()] = {candidate.text.lower()}
+                            nouns_map[subject.text.lower()] = [candidate.text.lower()]
                             nouns_freq[subject.text.lower()] = 1
                     elif candidate.dep_ in ['dobj', 'attr', 'conj'] and candidate.text.isalpha():
                         add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=[candidate])
