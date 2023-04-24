@@ -4,6 +4,7 @@ from tqdm.notebook import tqdm
 import os
 import pickle
 from utils import general
+from nltk.corpus import wordnet as wn
 
 def split_sentences(doc):
     sentences = []
@@ -11,20 +12,6 @@ def split_sentences(doc):
         sentences.append(sent)
     return sentences
 
-def find_aspects(sentence):
-    aspects = []
-    for token in sentence:
-        if token.pos_ == "NOUN" and token.text.isalpha():
-            adjs = []
-            found = False
-            for token2 in sentence:
-                if token2.pos_ == "ADJ" or token2.lemma_ == "not" and token2.head == token.head:
-                    found = True
-                    adjs.append(token2.text)
-            if found == True:
-                aspect = (token.text, adjs)
-                aspects.append(aspect)
-    return aspects
 
 def explore(token, children=None, level=0, order=None):
     if children is None:
@@ -36,21 +23,37 @@ def explore(token, children=None, level=0, order=None):
         explore(child, children=children, level=level+1, order=order)
     return children
 
+def get_antonyms_for(word):
+    antonyms = set()
+    for ss in wn.synsets(word):
+        for lemma in ss.lemmas():
+            any_pos_antonyms = [ antonym.name() for antonym in lemma.antonyms() ]
+            for antonym in any_pos_antonyms:
+                antonym_synsets = wn.synsets(antonym)
+                if wn.ADJ not in [ ss.pos() for ss in antonym_synsets ]:
+                    continue
+                antonyms.add(antonym)
+    return antonyms
+
 def add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=None):
     if nouns is None:
         nouns = [x for x in nlp_text if x.pos_ in ['NOUN', 'PROPN'] and x.text.isalpha()]
 
     for noun in nouns:
         subtree = explore(noun)
+
         subnouns = [(x, l)
                     for x, l, _ in subtree if x.pos_ in ['NOUN', 'PROPN']]
         for token, level, _ in subtree:
             if token.pos_ == 'ADJ' and len([(n, l) for n, l in subnouns if l < level]) == 0:
+                for child in token.children:
+                    if child.lemma_ == "not" and len(get_antonyms_for(str(token))) != 0:
+                        token = next(iter(get_antonyms_for(str(token))))
                 try:
-                    nouns_map[noun.text.lower()].append(token.text.lower())
+                    nouns_map[noun.text.lower()].append(str(token).lower())
                     nouns_freq[noun.text.lower()]+=1
                 except KeyError:
-                    nouns_map[noun.text.lower()] = [token.text.lower()]
+                    nouns_map[noun.text.lower()] = [str(token).lower()]
                     nouns_freq[noun.text.lower()] = 1
 
 def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
@@ -67,19 +70,21 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
             for candidate, level, left in subtokens:
                 if not left:
                     if candidate.pos_ == 'ADJ' and candidate.text.isalpha() and level == 0:
+                        for subtoken in subtokens:
+                            if subtoken[0].lemma_ == "not" and len(get_antonyms_for(str(candidate))) != 0:
+                                candidate = next(iter(get_antonyms_for(str(candidate))))
                         try:
-                            nouns_map[subject.text.lower()].append(candidate.text.lower())
+                            nouns_map[subject.text.lower()].append(str(candidate).lower())
                             nouns_freq[subject.text.lower()]+=1
                         except KeyError:
-                            nouns_map[subject.text.lower()] = [candidate.text.lower()]
+                            nouns_map[subject.text.lower()] = [str(candidate).lower()]
                             nouns_freq[subject.text.lower()] = 1
                     elif candidate.dep_ in ['dobj', 'attr', 'conj'] and candidate.text.isalpha():
                         add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=[candidate])
-              
 
 def get_aspects_adjs_and_freq():
     if os.path.exists("data/aspects_adjs.pickle") and os.path.exists("data/aspects_freq.pickle"):
-        with open("data/aspects_adjs.pickle", "rb") as f:
+        with open("data/aspectprint(review)s_adjs.pickle", "rb") as f:
             aspects_adjs = pickle.load(f)
         return aspects_adjs, pd.read_pickle("data/aspects_freq.pickle")
     
