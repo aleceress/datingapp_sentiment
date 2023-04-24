@@ -3,6 +3,8 @@ import pandas as pd
 from tqdm.notebook import tqdm
 from utils import general
 import os
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 
 def get_sentiwn_score(word):
@@ -46,3 +48,19 @@ def get_aspects_polarity_percentage(aspects, aspect_adjs, verbose = True):
                     count_positive = count_positive+1
 
     return count_positive/count*100, count_negative/count*100
+
+def get_wordcloud(query_aspects, aspects_adjs):
+    query_adjs = []
+    for aspect in query_aspects:
+        for adj in aspects_adjs[aspect]:
+            if abs(get_sentiwn_score(adj)) > 0.4:
+                query_adjs.append(adj) 
+    
+    text = " ".join(query_adjs)
+
+    wordcloud = WordCloud(width=1600, height=800, collocations=False).generate(text)
+    wordcloud.recolor(colormap="pink")
+    plt.figure(figsize=(10, 5), facecolor='k')
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show();
