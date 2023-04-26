@@ -6,3 +6,4 @@ langdetect
 gensim
 spacy
 wordcloud
+pyvis

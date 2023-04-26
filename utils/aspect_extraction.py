@@ -3,8 +3,11 @@ import gc
 from tqdm.notebook import tqdm
 import os
 import pickle
-from utils import general
+from utils import general, sentiment_extraction
 from nltk.corpus import wordnet as wn
+import networkx as nx
+from networkx.algorithms.community import greedy_modularity_communities
+
 
 def split_sentences(doc):
     sentences = []
@@ -84,7 +87,7 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
 
 def get_aspects_adjs_and_freq():
     if os.path.exists("data/aspects_adjs.pickle") and os.path.exists("data/aspects_freq.pickle"):
-        with open("data/aspectprint(review)s_adjs.pickle", "rb") as f:
+        with open("data/aspects_adjs.pickle", "rb") as f:
             aspects_adjs = pickle.load(f)
         return aspects_adjs, pd.read_pickle("data/aspects_freq.pickle")
     
@@ -107,3 +110,31 @@ def get_aspects_adjs_and_freq():
         pickle.dump(aspects_adjs, f)
         
     return aspects_adjs, norm_aspects_freq
+
+def cluster_query_adjs(query_aspects, aspects_adjs, pos=True):
+    adjs = []
+    for aspect in query_aspects:
+        for adj in aspects_adjs[aspect]:
+            if pos is True and sentiment_extraction.get_sentiwn_score(adj) > 0.2:
+                adjs.append(adj)
+            elif pos is False and sentiment_extraction.get_sentiwn_score(adj) < - 0.2:
+                adjs.append(adj)
+
+    G = nx.Graph()
+    min_sim = 0.6
+    for word1 in tqdm(adjs):
+        for word2 in adjs:
+            if word1 != word2:
+                syn1 = wn.synsets(word1)[0]
+                syn2 = wn.synsets(word2)[0]
+                sim = syn1.wup_similarity(syn2)
+                if  sim > min_sim:
+                    G.add_edge(word1, word2, sim=sim)
+
+    if G.number_of_nodes() != 0:
+        communities = greedy_modularity_communities(G)
+        for community in communities:
+            print(list(community))
+    else:
+        communities = None 
+    return communities, G
