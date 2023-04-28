@@ -38,3 +38,11 @@ elif sys.argv[1] == "bumble":
     bumble_reviews.rename(columns = {"Review": "content"}, inplace=True)
     os.mkdir("data/bumble_spacy")
     bumble_reviews.to_pickle("data/bumble_spacy/BumbleReviewsSpacy.pickle")
+
+elif sys.argv[1] == "hinge":
+    dating_reviews = pd.read_csv("data/DatingAppReviewsDataset.csv")
+    hinge_reviews = dating_reviews[dating_reviews.App == "Hinge"]
+    hinge_reviews["Review"] = hinge_reviews["Review"].progress_apply(lambda x: convert_to_spacy_doc(nlp, x))
+    hinge_reviews.rename(columns = {"Review": "content"}, inplace=True)
+    os.mkdir("data/hinge_spacy")
+    hinge_reviews.to_pickle("data/hinge_spacy/HingeReviewsSpacy.pickle")
