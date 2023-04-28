@@ -17,9 +17,9 @@ def get_glove_embedding(word):
     load_glove()
     return glove_twitter[word]
 
-def get_aspects_embeddings(aspects):
-    if os.path.isfile("data/aspects_embedding.pickle"):
-        with open("data/aspects_embedding.pickle", "rb") as f:
+def get_aspects_embeddings(aspects, app):
+    if os.path.isfile(f"data/aspects_embedding_{app}.pickle"):
+        with open(f"data/aspects_embedding_{app}.pickle", "rb") as f:
             return pickle.load(f)
 
     load_glove()
@@ -30,7 +30,7 @@ def get_aspects_embeddings(aspects):
             aspects_embedding[aspect] = glove_twitter[aspect]
         except KeyError:
             continue
-    with open("data/aspect_embedding.pickle", "wb+") as f:
+    with open(f"data/aspects_embedding_{app}.pickle", "wb+") as f:
             pickle.dump(aspects_embedding, f)
     return aspects_embedding
 

@@ -85,28 +85,30 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
                     elif candidate.dep_ in ['dobj', 'attr', 'conj'] and candidate.text.isalpha():
                         add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=[candidate])
 
-def get_aspects_adjs_and_freq():
-    if os.path.exists("data/aspects_adjs.pickle") and os.path.exists("data/aspects_freq.pickle"):
-        with open("data/aspects_adjs.pickle", "rb") as f:
+def get_aspects_adjs_and_freq(app = "tinder"):
+
+    if os.path.exists(f"data/aspects_adjs_{app}.pickle") and os.path.exists(f"data/aspects_freq_{app}.pickle"):
+        with open(f"data/aspects_adjs_{app}.pickle", "rb") as f:
             aspects_adjs = pickle.load(f)
-        return aspects_adjs, pd.read_pickle("data/aspects_freq.pickle")
-    
+        return aspects_adjs, pd.read_pickle(f"data/aspects_freq_{app}.pickle")
+   
     aspects_adjs = {}
     aspects_freq = pd.Series()
 
-    for i in range(10):
-        print(f"processing {i+1}/10 reviews")
+    review_files = os.listdir(f"data/{app}_spacy")
+    for i, filename in enumerate(review_files):
+        print(f"processing {i+1}/{len(review_files)} reviews")
         gc.collect()
-        tinder_reviews = pd.read_pickle(f"data/tinder_spacy/spacy_tinder_sample_{i}.pickle").dropna()
-        for _, review in tqdm(tinder_reviews["content"].items(), total=len(tinder_reviews)):
+        reviews = pd.read_pickle(f"data/{app}_spacy/{filename}").dropna()
+        for _, review in tqdm(reviews["content"].items(), total=len(reviews)):
             for _, sentence in enumerate(split_sentences(review)):
                 add_adj_aspects(aspects_adjs, aspects_freq, sentence)
                 add_verb_aspects(aspects_adjs, aspects_freq, sentence)
     
     norm_aspects_freq = general.normalize_series(aspects_freq)
-    norm_aspects_freq.to_pickle("data/aspects_freq.pickle")
+    norm_aspects_freq.to_pickle(f"data/aspects_freq_{app}.pickle")
 
-    with open("data/aspects_adjs.pickle", "wb+") as f:
+    with open(f"data/aspects_adjs_{app}.pickle", "wb+") as f:
         pickle.dump(aspects_adjs, f)
         
     return aspects_adjs, norm_aspects_freq
