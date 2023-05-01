@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pickle
 import numpy as np
 from utils import general
+from tqdm import tqdm
 
 glove_twitter = None
 
@@ -40,21 +41,31 @@ def get_query_expansion(query, not_query= []):
     stopwords = general.get_stopwords()
     return [w for w in query] + [i[0].lower().replace("_", " ") for i in glove_twitter.most_similar(positive = [q for q in query], negative = [nq for nq in not_query], topn=5) if i not in stopwords]
 
-def get_query_similarities(aspects, query, not_query=[]):
+def get_text_embedding(text):
     load_glove()
-    query_embedding = np.zeros(glove_twitter.vector_size)
+    text_embedding = np.zeros(glove_twitter.vector_size)
+    words = text.split(" ")
+    for word in words:
+        try:
+            text_embedding += get_glove_embedding(word)
+        except KeyError:
+            continue
+    return text_embedding/len(words)
+
+def get_query_similarities(aspects, query, not_query=[], threshold = 0):
+    load_glove()
     query_expansion = get_query_expansion(query, not_query)
+    query_embedding = np.zeros(glove_twitter.vector_size)
+
     print(f"expansion: {query_expansion}")
     for q in query_expansion:
-        for w in q.split(" "):
-            try:
-                query_embedding += get_glove_embedding(w)
-            except KeyError:
-                continue
+        query_embedding += get_text_embedding(q)
 
     query_embedding = query_embedding/len(query_expansion)
 
     similarity = pd.Series()
-    for w, e in aspects.items():
-        similarity[w] = cosine_similarity(e.reshape(1,-1), query_embedding.reshape(1,-1))[0][0]
+    for w, e in tqdm(aspects.items(), total = len(aspects)):
+        cos_similarity = cosine_similarity(e.reshape(1,-1), query_embedding.reshape(1,-1))[0][0]
+        if cos_similarity > threshold:
+            similarity[w] = cosine_similarity(e.reshape(1,-1), query_embedding.reshape(1,-1))[0][0]
     return similarity
