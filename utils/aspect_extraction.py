@@ -7,7 +7,10 @@ from utils import general, sentiment_extraction
 from nltk.corpus import wordnet as wn
 import networkx as nx
 from networkx.algorithms.community import greedy_modularity_communities
-
+import collections
+import nltk
+import numpy as np
+import itertools
 
 def split_sentences(doc):
     sentences = []
@@ -146,3 +149,68 @@ def cluster_query_adjs(query_aspects, aspects_adjs, polarity= "all"):
     else:
         communities = None 
     return communities, G
+
+def get_adj_noun_pmi(reviews):
+    words = []
+    for review in reviews:
+        words.extend(review)
+
+    word_frequencies = collections.Counter(words)
+    word_frequencies = {word[0]: word[1] for word in word_frequencies.most_common(500)}
+    word_frequencies_sum = sum(word_frequencies.values())
+    nouns = [word[0] for word in nltk.pos_tag(word_frequencies.keys()) if word[1] == "NN" or word[1] == "NNS"]
+    adjs =  [word[0] for word in nltk.pos_tag(word_frequencies.keys()) if word[1] == "JJ"]
+
+    adj_noun_pmi = pd.DataFrame(list(itertools.product(nouns, adjs))).rename(columns = {0: "noun", 1: "adj"})
+    adj_noun_pmi["noun_prob"] = [word_frequencies[word]/word_frequencies_sum for word in adj_noun_pmi["noun"].values]
+    adj_noun_pmi["adj_prob"] = [word_frequencies[word]/word_frequencies_sum for word in adj_noun_pmi["adj"].values]
+
+    for i, row in tqdm(adj_noun_pmi.iterrows(), total = len(adj_noun_pmi)):
+        adj_noun_pmi.at[i, "adj_noun_prob"] = len([review for review in reviews if row["adj"] in review and row["noun"] in review])/word_frequencies_sum
+
+    adj_noun_pmi["adj_noun_pmi"] = adj_noun_pmi["adj_noun_prob"]/(adj_noun_pmi["noun_prob"]*adj_noun_pmi["adj_prob"])
+    adj_noun_pmi["adj_noun_pmi"] = general.normalize_series(adj_noun_pmi["adj_noun_pmi"])
+    return adj_noun_pmi[["adj", "noun", "adj_noun_pmi"]]
+
+def get_reviews_by_category(app, categories):
+    reviews = general.preprocess_reviews(app=app)
+    model, dictionary, index, corpus = general.create_tfidf_model(reviews)
+    category_reviews = {}
+    for category in categories:
+        category_reviews[category] = general.get_tfidf_closest_n([word for word in category.split(" ")], 2000, dictionary, index, model, reviews)
+    return category_reviews
+
+
+def get_noun_category_pmi(categories_reviews):
+    noun_category_doc = []
+    for category, reviews in categories_reviews.items():
+        for i, review in enumerate(reviews):
+            for noun in review:
+                noun_category_doc.append({"doc":i, "category": category, "noun": noun})
+    noun_category_doc = pd.DataFrame(noun_category_doc)
+
+    min_freq = 10
+    noun_category_count = noun_category_doc.groupby(['category', 'noun']).count().reset_index()[['category', 'noun', 'doc']].rename(columns = {"doc": "count"})
+    noun_category_count = noun_category_count[noun_category_count["count"] > min_freq]
+
+    category_count = pd.DataFrame(noun_category_count.groupby('category')['count'].sum())
+    category_count = category_count[category_count["count"] > min_freq]
+
+    noun_count = pd.DataFrame(noun_category_count.groupby('noun')['count'].sum())
+    noun_count = noun_count[noun_count["count"] > min_freq]
+
+    noun_count_sum = noun_category_count["count"].sum()
+
+    noun_category_count["probability"] = noun_category_count["count"] / noun_count_sum
+    category_count["probability"] = category_count["count"]/category_count["count"].sum()
+    noun_count["probability"] = noun_count["count"]/noun_count["count"].sum()
+
+    noun_category_pmi = []
+    for i, row in noun_category_count.iterrows():
+        noun_category_pmi.append({'category': row['category'],
+                    'noun': row['noun'],
+                    'noun_cat_pmi': np.log(
+                        row.probability / (category_count.loc[row['category']].probability * noun_count.loc[row['noun']].probability))})
+    noun_category_pmi = pd.DataFrame(noun_category_pmi)
+    noun_category_pmi["noun_cat_pmi"] = general.normalize_series(noun_category_pmi["noun_cat_pmi"])
+    return noun_category_pmi

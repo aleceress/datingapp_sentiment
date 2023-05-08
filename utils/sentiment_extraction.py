@@ -5,6 +5,7 @@ from utils import general
 import os
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from transformers import pipeline
 
 
 def get_sentiwn_score(word):
@@ -15,7 +16,7 @@ def get_sentiwn_score(word):
                                   'neg': sw.neg_score(), 
                                   'obj': sw.obj_score()} for sw in synsets])
         avg_polarity = polarity.mean()
-        score = abs(avg_polarity['pos'] + avg_polarity['obj']) - (avg_polarity['neg'] + avg_polarity['obj'])
+        score = avg_polarity['pos'] - avg_polarity['neg']
     return score
 
 def get_aspects_polarity(aspects_adjs, app):
@@ -38,7 +39,7 @@ def get_aspects_polarity_percentage(aspects, aspect_adjs, verbose = True):
     for aspect in aspects:
         for adj in aspect_adjs[aspect]:
             score = get_sentiwn_score(adj)
-            if abs(score) > 0.40:
+            if abs(score) > 0.20:
                 if verbose: 
                     print(adj, score)
                 count = count+1
@@ -64,3 +65,19 @@ def get_wordcloud(query_aspects, aspects_adjs):
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis("off")
     plt.show();
+
+def get_reviews_polarities(reviews):
+    pos_polarity = []
+    neg_polarity = []
+
+    polarity_pipeline = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english", top_k=None, truncation=True)
+    for sentence in tqdm(reviews["sentence"].values):
+        polarities = polarity_pipeline(sentence)
+        for polarity in polarities[0]:
+            if polarity["label"] == "NEGATIVE":
+                neg_polarity.append(polarity["score"])
+            elif polarity["label"] == "POSITIVE":
+                pos_polarity.append(polarity["score"])
+    reviews["pos"] = pos_polarity
+    reviews["neg"] = neg_polarity
+    return reviews
