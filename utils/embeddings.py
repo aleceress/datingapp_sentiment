@@ -47,7 +47,7 @@ def get_text_embedding(text):
     words = text.split(" ")
     for word in words:
         try:
-            text_embedding += get_glove_embedding(word)
+            text_embedding += get_glove_embedding(word.lower())
         except KeyError:
             continue
     return text_embedding/len(words)

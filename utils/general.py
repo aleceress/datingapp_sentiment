@@ -3,6 +3,11 @@ from tqdm.notebook import tqdm
 from gensim.models import TfidfModel
 from gensim.corpora import Dictionary
 from gensim import similarities
+from rank_bm25 import BM25Okapi
+import os 
+from datetime import datetime
+import spacy
+from utils import embeddings, sentiment_extraction, aspect_extraction
 
 def normalize_series(series):
     max = series.max()
@@ -48,3 +53,47 @@ def get_tfidf_closest_n(query, n, dictionary, index, model, reviews):
     sims = index[model[query_vec]]
     top_idx = sims.argsort()[-1*n:][::-1]
     return [reviews[i] for i in top_idx]
+
+def bm25_search(reviews, query, bm25):
+    query=query.lower()
+    tokenized_query = query.split(" ")
+    doc_scores = bm25.get_scores(tokenized_query)
+    reviews["bm25_score"] = doc_scores
+    return reviews[reviews.bm25_score > 4]
+
+def bm25_annotate(queries, app):
+    if os.path.isfile(f"data/{app}_annotated.pickle"):
+        return pd.read_pickle(f"data/{app}_annotated.pickle")
+    
+    if app == "tinder":
+        reviews = pd.read_csv("data/tinder_google_play_reviews.csv")
+        reviews["at"] = reviews["at"].apply(lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
+    elif app == "bumble":
+        reviews = pd.read_csv("data/DatingAppReviewsDataset.csv")
+        reviews = reviews[reviews.App == "Bumble"]
+        reviews = reviews.rename(columns = {"Date&Time": "at", "Review":"content", 'Unnamed: 0': "reviewId", "Rating": "score"})
+        reviews["at"] = reviews["at"].apply(lambda x: datetime.strptime(x, '%d-%m-%Y %H:%M'))
+
+    reviews = reviews.dropna(subset=["content"])
+    corpus = reviews['content'].tolist()
+    tokenized_corpus = [doc.split(" ") for doc in corpus]
+    bm25 = BM25Okapi(tokenized_corpus)
+
+    annotated_df = pd.DataFrame()
+    for query in queries:
+        query=query.lower()
+        query_reviews = bm25_search(reviews, query, bm25)
+        query_reviews["category"] = query.split(" ")[0]
+        annotated_df = pd.concat([annotated_df, query_reviews[["reviewId", "content", "score", "at", "bm25_score", "category"]]])
+
+    annotated_df = annotated_df.sort_values(by="bm25_score", ascending=False).drop_duplicates(subset=["reviewId"], keep="first")
+    annotated_df.to_pickle(f"data/{app}_annotated.pickle")
+    return annotated_df
+
+def convert_to_spacy_doc(nlp, text):
+    try: 
+        doc = nlp(text)
+    except:
+        return None
+    return doc
+

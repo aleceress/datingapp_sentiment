@@ -7,3 +7,5 @@ gensim
 spacy
 wordcloud
 pyvis
+transformers
+rank_bm25

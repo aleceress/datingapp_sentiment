@@ -88,9 +88,9 @@ def add_verb_aspects(nouns_map, nouns_freq, nlp_text, be_only=True):
                     elif candidate.dep_ in ['dobj', 'attr', 'conj'] and candidate.text.isalpha():
                         add_adj_aspects(nouns_map, nouns_freq, nlp_text, nouns=[candidate])
 
-def get_aspects_adjs_and_freq(app = "tinder"):
-
-    if os.path.exists(f"data/aspects_adjs_{app}.pickle") and os.path.exists(f"data/aspects_freq_{app}.pickle"):
+def get_aspects_adjs_and_freq(app = "tinder", evaluation_ids = None):
+    
+    if os.path.exists(f"data/aspects_adjs_{app}.pickle") and os.path.exists(f"data/aspects_freq_{app}.pickle") and evaluation_ids is None:
         with open(f"data/aspects_adjs_{app}.pickle", "rb") as f:
             aspects_adjs = pickle.load(f)
         return aspects_adjs, pd.read_pickle(f"data/aspects_freq_{app}.pickle")
@@ -103,6 +103,8 @@ def get_aspects_adjs_and_freq(app = "tinder"):
         print(f"processing {i+1}/{len(review_files)} reviews")
         gc.collect()
         reviews = pd.read_pickle(f"data/{app}_spacy/{filename}").dropna()
+        if evaluation_ids is not None:
+            reviews = reviews[reviews.reviewId.isin(evaluation_ids)]
         for _, review in tqdm(reviews["content"].items(), total=len(reviews)):
             for _, sentence in enumerate(split_sentences(review)):
                 add_adj_aspects(aspects_adjs, aspects_freq, sentence)
@@ -111,9 +113,10 @@ def get_aspects_adjs_and_freq(app = "tinder"):
     norm_aspects_freq = general.normalize_series(aspects_freq)
     norm_aspects_freq.to_pickle(f"data/aspects_freq_{app}.pickle")
 
-    with open(f"data/aspects_adjs_{app}.pickle", "wb+") as f:
-        pickle.dump(aspects_adjs, f)
-        
+    if evaluation_ids is None:
+        with open(f"data/aspects_adjs_{app}.pickle", "wb+") as f:
+            pickle.dump(aspects_adjs, f)
+            
     return aspects_adjs, norm_aspects_freq
 
 def cluster_query_adjs(query_aspects, aspects_adjs, polarity= "all"):

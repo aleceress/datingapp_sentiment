@@ -6,6 +6,7 @@ import os
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from transformers import pipeline
+import numpy as np
 
 
 def get_sentiwn_score(word):
@@ -35,26 +36,33 @@ def get_aspects_polarity_percentage(aspects, aspect_adjs, verbose = True):
     count = 0
     count_positive = 0
     count_negative = 0
+    avg = 0
 
     for aspect in aspects:
         for adj in aspect_adjs[aspect]:
             score = get_sentiwn_score(adj)
-            if abs(score) > 0.20:
+            if abs(score) > 0.40:
                 if verbose: 
                     print(adj, score)
                 count = count+1
+                avg+= score
                 if score < 0:
                     count_negative = count_negative+1
                 else:
                     count_positive = count_positive+1
-
-    return count_positive/count*100, count_negative/count*100
+    try:
+        positive_percentage = count_positive/count*100
+        negative_percentage = count_negative/count*100
+        avg = avg/count
+    except:
+        return np.nan, np.nan, np.nan
+    return positive_percentage, negative_percentage, avg
 
 def get_wordcloud(query_aspects, aspects_adjs):
     query_adjs = []
     for aspect in query_aspects:
         for adj in aspects_adjs[aspect]:
-            if abs(get_sentiwn_score(adj)) > 0.4:
+            if abs(get_sentiwn_score(adj)) > 0.2:
                 query_adjs.append(adj) 
     
     text = " ".join(query_adjs)
