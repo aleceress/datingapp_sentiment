@@ -79,7 +79,7 @@ def get_reviews_polarities(reviews):
     neg_polarity = []
 
     polarity_pipeline = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english", top_k=None, truncation=True)
-    for sentence in tqdm(reviews["sentence"].values):
+    for sentence in tqdm(reviews["content"].values):
         polarities = polarity_pipeline(sentence)
         for polarity in polarities[0]:
             if polarity["label"] == "NEGATIVE":

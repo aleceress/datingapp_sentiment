@@ -30,6 +30,9 @@ def preprocess_reviews(app = "tinder"):
     elif app == "bumble":
         reviews_file = pd.read_csv("data/DatingAppReviewsDataset.csv").dropna(subset="Review")
         reviews_file = reviews_file[reviews_file.App == "Bumble"].rename(columns={"Review":"content"})
+    elif app == "hinge":
+        reviews_file = pd.read_csv("data/DatingAppReviewsDataset.csv").dropna(subset="Review")
+        reviews_file = reviews_file[reviews_file.App == "Hinge"].rename(columns={"Review":"content"})
 
     stopwords = get_stopwords()
     reviews = []
@@ -71,6 +74,11 @@ def bm25_annotate(queries, app):
     elif app == "bumble":
         reviews = pd.read_csv("data/DatingAppReviewsDataset.csv")
         reviews = reviews[reviews.App == "Bumble"]
+        reviews = reviews.rename(columns = {"Date&Time": "at", "Review":"content", 'Unnamed: 0': "reviewId", "Rating": "score"})
+        reviews["at"] = reviews["at"].apply(lambda x: datetime.strptime(x, '%d-%m-%Y %H:%M'))
+    elif app == "hinge":
+        reviews = pd.read_csv("data/DatingAppReviewsDataset.csv")
+        reviews = reviews[reviews.App == "Hinge"]
         reviews = reviews.rename(columns = {"Date&Time": "at", "Review":"content", 'Unnamed: 0': "reviewId", "Rating": "score"})
         reviews["at"] = reviews["at"].apply(lambda x: datetime.strptime(x, '%d-%m-%Y %H:%M'))
 

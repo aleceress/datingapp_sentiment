@@ -9,3 +9,4 @@ wordcloud
 pyvis
 transformers
 rank_bm25
+tensorflow

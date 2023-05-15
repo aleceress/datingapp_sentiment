@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_apps_polarity(apps_polarity, aspects, figsize):
+def plot_apps_polarity(apps_polarity, aspects, figsize, avg=True):
     x = np.arange(len(aspects))
     width = 0.2
-    fig, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=figsize)
+    if avg:
+        fig, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=figsize)
+    else:
+        fig, (ax1, ax2) = plt.subplots(1,2, figsize=figsize)
 
     ax1.bar(x-0.2, [apps_polarity["tinder"][aspect]["pos"] for aspect in aspects], width, color = "deeppink")
     ax1.bar(x, [apps_polarity["bumble"][aspect]["pos"] for aspect in aspects], width, color = "gold")
@@ -24,14 +27,15 @@ def plot_apps_polarity(apps_polarity, aspects, figsize):
     ax2.set_ylabel("Negative Polarity Score % ")
     ax2.legend(["Tinder", "Bumble", "Hinge"])
 
-    ax3.bar(x-0.2, [apps_polarity["tinder"][aspect]["avg"] for aspect in aspects], width, color = "deeppink")
-    ax3.bar(x, [apps_polarity["bumble"][aspect]["avg"] for aspect in aspects], width, color = "gold")
-    ax3.bar(x+0.2, [apps_polarity["hinge"][aspect]["avg"] for aspect in aspects], width, color = "black")
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(aspects)
-    ax3.set_xlabel("Aspects")
-    ax3.set_ylabel("Avg Polarity Scores")
-    ax3.legend(["Tinder", "Bumble", "Hinge"])
+    if avg:
+        ax3.bar(x-0.2, [apps_polarity["tinder"][aspect]["avg"] for aspect in aspects], width, color = "deeppink")
+        ax3.bar(x, [apps_polarity["bumble"][aspect]["avg"] for aspect in aspects], width, color = "gold")
+        ax3.bar(x+0.2, [apps_polarity["hinge"][aspect]["avg"] for aspect in aspects], width, color = "black")
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(aspects)
+        ax3.set_xlabel("Aspects")
+        ax3.set_ylabel("Avg Polarity Scores")
+        ax3.legend(["Tinder", "Bumble", "Hinge"])
 
     plt.subplots_adjust(wspace=0.3)
 
