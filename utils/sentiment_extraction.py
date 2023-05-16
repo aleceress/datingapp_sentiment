@@ -7,6 +7,8 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from transformers import pipeline
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def get_sentiwn_score(word):
