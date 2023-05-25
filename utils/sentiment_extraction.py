@@ -16,8 +16,7 @@ def get_sentiwn_score(word):
     score = 0.0
     if len(synsets) > 0:
         polarity = pd.DataFrame([{'pos': sw.pos_score(), 
-                                  'neg': sw.neg_score(), 
-                                  'obj': sw.obj_score()} for sw in synsets])
+                                  'neg': sw.neg_score()} for sw in synsets])
         avg_polarity = polarity.mean()
         score = avg_polarity['pos'] - avg_polarity['neg']
     return score
@@ -43,7 +42,7 @@ def get_aspects_polarity_percentage(aspects, aspect_adjs, verbose = True):
     for aspect in aspects:
         for adj in aspect_adjs[aspect]:
             score = get_sentiwn_score(adj)
-            if abs(score) > 0.40:
+            if abs(score) > 0.1:
                 if verbose: 
                     print(adj, score)
                 count = count+1

@@ -169,7 +169,7 @@ def get_adj_noun_pmi(reviews):
     adj_noun_pmi["adj_prob"] = [word_frequencies[word]/word_frequencies_sum for word in adj_noun_pmi["adj"].values]
 
     for i, row in tqdm(adj_noun_pmi.iterrows(), total = len(adj_noun_pmi)):
-        adj_noun_pmi.at[i, "adj_noun_prob"] = len([review for review in reviews if row["adj"] in review and row["noun"] in review])/word_frequencies_sum
+        adj_noun_pmi.at[i, "adj_noun_prob"] = len([review for review in reviews if row["adj"] in review and row["noun"] in review])/len(reviews)
 
     adj_noun_pmi["adj_noun_pmi"] = adj_noun_pmi["adj_noun_prob"]/(adj_noun_pmi["noun_prob"]*adj_noun_pmi["adj_prob"])
     adj_noun_pmi["adj_noun_pmi"] = general.normalize_series(adj_noun_pmi["adj_noun_pmi"])
