@@ -9,7 +9,7 @@ from transformers import pipeline
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
-
+import gc
 
 def get_sentiwn_score(word):
     synsets = list(swn.senti_synsets(word))
@@ -89,4 +89,5 @@ def get_reviews_polarities(reviews):
                 pos_polarity.append(polarity["score"])
     reviews["pos"] = pos_polarity
     reviews["neg"] = neg_polarity
+    gc.collect()
     return reviews
