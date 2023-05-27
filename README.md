@@ -3,7 +3,9 @@
 In the last years, __dating apps__ have become more and more popular, and have
 caught the attention of researchers studying the interplay between new __media technologies__ and __society__. 
 
-Studies have analyzed the motives driving people to use these apps, finding them ranging from __casual sex__ to simply __killing time__, as well as involving __romantic__ pursuits and other kinds of affiliation and information.  Moreover, __gender__ differences in app uses seem to be prominent, with men primarily pursuing hook-up sex, travelling and relationships, and women more prone to seek friendship and self-validation. The aim of this project is to exploit the descriptive power of __aspect-based__ sentiment analysis to try to automatically detect a polarity (and possibly an opinion) for these social impacting aspects. A complete description of the project is available in this [report](https://github.com/aleceress/datingapp_sentiment/blob/master/report.pdf).
+Studies have analyzed the motives driving people to use these apps, finding them ranging from __casual sex__ to simply __killing time__, as well as involving __romantic__ pursuits and other kinds of affiliation and information.  Moreover, __gender__ differences in app uses seem to be prominent, with men primarily pursuing hook-up sex, travelling and relationships, and women more prone to seek friendship and self-validation. 
+
+The aim of this project is to exploit the descriptive power of __aspect-based__ sentiment analysis to try to automatically detect a polarity (and possibly an opinion) for these social impacting aspects. A complete description of the project is available in this [report](https://github.com/aleceress/datingapp_sentiment/blob/master/report.pdf).
 
 ## __Models__
 
